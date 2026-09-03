@@ -1,0 +1,713 @@
+{
+  "template_name": "TEN Capital Startup Valuation Analysis One-Pager",
+  "template_version": "1.0",
+  "description": "Canonical structure for every startup valuation one-pager the generator produces. Zone geometry, section order, table columns, field placeholders, length budgets, provenance rules, the input catalogue to be analyzed, the validation rules to be run and the number formats are defined here — this file describes the document, never a particular company. Every value on the page is a placeholder to be filled at render time.",
+
+  "document": {
+    "page_size": "letter",
+    "orientation": "portrait",
+    "margin_in": 0.45,
+    "max_pages": 1,
+    "columns": 1,
+    "column_note": "One full-width body column of six stacked sections. Sections 4 and 6 split internally into two half-width columns; nothing else does.",
+    "title_pattern": "{{COMPANY NAME}} — Startup Valuation Analysis",
+    "filename_pattern": "{{company_slug}}_valuation.pdf",
+    "sidecar_pattern": "{{company_slug}}_valuation.json",
+    "sidecar_schema": "app/output/json_export.py — REQUIRED, verified by verify_schema()",
+    "missing_marker": "—",
+    "pre_revenue_marker": "Pre-revenue",
+    "not_disclosed_marker": "Not disclosed",
+    "insufficient_marker": "Insufficient information",
+    "no_comparables_statement": "Comparable financing data not supplied."
+  },
+
+  "provenance": {
+    "description": "Every material value carries one of these classifications, in this precedence order. A lower-authority source may not overwrite a higher-authority one, and an assumption is never presented as though the deck or the user supplied it.",
+    "source_types": [
+      { "rank": 0, "id": "USER", "label": "User supplied", "meaning": "Entered explicitly by the person requesting the analysis. Outranks everything." },
+      { "rank": 1, "id": "DECK", "label": "Pitch deck", "meaning": "Stated in the deck. Cited to a slide, with the supporting quote." },
+      { "rank": 2, "id": "COMPARABLE", "label": "Comparable financing data", "meaning": "Derived from externally supplied comparable transactions. Carries the supplying source." },
+      { "rank": 3, "id": "CALCULATED", "label": "Calculated", "meaning": "Derived in Python from other inputs. Carries its formula." },
+      { "rank": 4, "id": "ASSUMPTION", "label": "ANALYST ASSUMPTION", "meaning": "Introduced because the input was unavailable. Carries its rationale and is itemised on the page." }
+    ],
+    "confidence_levels": ["HIGH", "MEDIUM", "LOW"],
+    "ledger_row": "metric | value | source_type | source | confidence | unit | notes",
+    "displaced_values": "A value beaten on precedence is retained in the record as superseded, so the audit trail shows what was considered and rejected."
+  },
+
+  "analysis_inputs": {
+    "description": "What is read out of the source document and analyzed. Each field is copied verbatim with its slide number and a supporting quote; every reading of that text into a number happens in Python, never in the extraction step. A field the document does not state is omitted, never estimated.",
+    "groups": [
+      {
+        "id": "company",
+        "label": "Company identity",
+        "fields": [
+          { "key": "name", "analyze": "Company name exactly as written." },
+          { "key": "website", "analyze": "Website or domain." },
+          { "key": "headquarters", "analyze": "Headquarters city, state or country." },
+          { "key": "geography", "analyze": "Primary market geography sold into." },
+          { "key": "sector", "analyze": "Sector or category." },
+          { "key": "subsector", "analyze": "Narrower category, where one is named." },
+          { "key": "business_model", "analyze": "How revenue is earned." },
+          { "key": "stage", "analyze": "Funding or development stage as described." }
+        ]
+      },
+      {
+        "id": "financing",
+        "label": "The round on offer",
+        "fields": [
+          { "key": "raise_amount", "analyze": "Size of the round being raised." },
+          { "key": "instrument", "analyze": "Security offered: priced equity, SAFE, convertible note." },
+          { "key": "pre_money", "analyze": "Requested pre-money valuation." },
+          { "key": "post_money", "analyze": "Requested post-money valuation." },
+          { "key": "valuation_cap", "analyze": "SAFE or note valuation cap." },
+          { "key": "discount_rate", "analyze": "Conversion discount." },
+          { "key": "interest_rate", "analyze": "Note interest rate." },
+          { "key": "maturity", "analyze": "Note maturity date or term." },
+          { "key": "committed", "analyze": "Amount already committed or soft-circled." },
+          { "key": "prior_raised", "analyze": "Capital raised to date, before this round." },
+          { "key": "lead_investor", "analyze": "Named lead investor." },
+          { "key": "use_of_funds", "analyze": "Use of proceeds, with line items where broken out." }
+        ]
+      },
+      {
+        "id": "metrics",
+        "label": "Operating metrics",
+        "fields": [
+          { "key": "revenue", "analyze": "Most recent ACTUAL annual revenue, carrying the table's scale into the figure." },
+          { "key": "revenue_label", "analyze": "The exact column heading or words labelling that figure. Required whenever revenue is reported: an unlabelled figure is what lets a forecast be valued as revenue earned." },
+          { "key": "arr", "analyze": "Annual recurring revenue." },
+          { "key": "mrr", "analyze": "Monthly recurring revenue. Annualised downstream, never in the extraction step." },
+          { "key": "growth_rate", "analyze": "Revenue growth rate, with its period." },
+          { "key": "gross_margin", "analyze": "Gross margin percentage." },
+          { "key": "ebitda", "analyze": "EBITDA or operating profit/loss, keeping the sign." },
+          { "key": "burn", "analyze": "Cash burn, with its period." },
+          { "key": "runway", "analyze": "Runway remaining." },
+          { "key": "customer_count", "analyze": "Customers, accounts or logos today." },
+          { "key": "acv", "analyze": "Average contract value." },
+          { "key": "customer_concentration", "analyze": "How concentrated revenue is, in the document's words." },
+          { "key": "largest_customer_pct", "analyze": "Share of revenue from the single largest customer." },
+          { "key": "retention", "analyze": "Customer or logo retention." },
+          { "key": "gross_retention", "analyze": "Gross revenue retention." },
+          { "key": "nrr", "analyze": "Net revenue retention. Routinely above 100% and must stay so." },
+          { "key": "churn", "analyze": "Churn rate, with its period." },
+          { "key": "cac", "analyze": "Customer acquisition cost." },
+          { "key": "ltv", "analyze": "Customer lifetime value." },
+          { "key": "ltv_cac", "analyze": "LTV to CAC ratio." },
+          { "key": "sales_cycle", "analyze": "Length of the sales cycle." },
+          { "key": "pipeline", "analyze": "Sales pipeline value. Never revenue." },
+          { "key": "customer_growth", "analyze": "Growth in customer count, with its period." }
+        ]
+      },
+      {
+        "id": "market",
+        "label": "Market size",
+        "fields": [
+          { "key": "tam", "analyze": "Total addressable market as stated, with its unit." },
+          { "key": "sam", "analyze": "Serviceable addressable market as stated." },
+          { "key": "som", "analyze": "Serviceable obtainable market as stated." }
+        ]
+      },
+      {
+        "id": "quality",
+        "label": "Company quality factors",
+        "fields": [
+          { "key": "ip_summary", "analyze": "Intellectual property position as described." },
+          { "key": "patents_filed", "analyze": "Count of patents or applications filed." },
+          { "key": "patents_granted", "analyze": "Count of patents granted or issued." },
+          { "key": "proprietary_technology", "analyze": "Proprietary technology or technical moat claimed." },
+          { "key": "proprietary_data", "analyze": "Proprietary or exclusive data assets claimed." },
+          { "key": "regulatory_approvals", "analyze": "Clearances or approvals already held." },
+          { "key": "regulatory_status", "analyze": "Regulatory pathway and current position on it." },
+          { "key": "product_maturity", "analyze": "Concept, prototype, beta, in market, scaled." },
+          { "key": "differentiation", "analyze": "Competitive differentiation claimed, in its own words." },
+          { "key": "founder_experience", "analyze": "Founder background and prior operating experience." },
+          { "key": "management_quality", "analyze": "Team composition, seniority and functional coverage." },
+          { "key": "relevant_exits", "analyze": "Prior exits, IPOs or acquisitions by the team." },
+          { "key": "domain_expertise", "analyze": "Depth of domain expertise in this market." },
+          { "key": "customer_validation", "analyze": "Pilots, references, endorsements, letters of intent." },
+          { "key": "strategic_partnerships", "analyze": "Named strategic, channel or distribution partners." }
+        ]
+      }
+    ],
+    "classification": {
+      "id": "scorecard",
+      "description": "Judgement, not extraction. Each factor is scored against what a company at this stage in this sector normally shows, on a -2..+2 scale where 0 is par. Every factor carries an evidence flag; a factor the document does not address must come back absent and is then held at par, because silence is neither a strength nor a weakness.",
+      "factors": [
+        { "key": "team", "analyze": "Founder and management strength: domain depth, prior exits, functional coverage, full-time commitment." },
+        { "key": "opportunity", "analyze": "Size and quality of the market opportunity as evidenced, not as asserted." },
+        { "key": "product", "analyze": "How far past concept the product is, and whether it is shown working." },
+        { "key": "defensibility", "analyze": "Granted IP, regulatory exclusivity, proprietary data, switching costs, network effects." },
+        { "key": "traction", "analyze": "Revenue, customers, pilots converting, non-dilutive funding, retention." },
+        { "key": "partnerships", "analyze": "Relationships that materially change the go-to-market." }
+      ],
+      "scale": { "-2": "materially weaker than par", "-1": "weaker", "0": "par or not addressed", "1": "stronger", "2": "materially stronger" }
+    },
+    "contradictions": {
+      "description": "Places the source document contradicts itself on a figure the analysis depends on. Both sides are quoted and both locations named. Contradictions are reported, never resolved.",
+      "placeholder": "{{FIGURE A AT {{LOCATION}}}} conflicts with {{FIGURE B AT {{LOCATION}}}}"
+    },
+    "externally_supplied": {
+      "id": "comparable_financings",
+      "description": "Supplied by the user or an upstream component. Never fetched, never invented. With none supplied the document states so and the comparable method excludes itself.",
+      "fields": [
+        "company", "sector", "stage", "financing_date", "round_size", "pre_money",
+        "post_money", "revenue", "arr", "growth", "geography", "lead_investor",
+        "source", "source_date"
+      ],
+      "usable_when": "A pre-money valuation is present. A row without one is retained and marked unusable."
+    }
+  },
+
+  "valuation_methods": {
+    "description": "Methods are nominated by stage band, and the stage band is decided by countable revenue rather than by the label the document gives itself. A nominated method that cannot be grounded excludes itself and states why; weights renormalise across whatever ran.",
+    "stage_bands": ["PRE_REVENUE", "SEED", "SERIES_A", "GROWTH"],
+    "methods": [
+      {
+        "key": "revenue_multiple",
+        "label": "Revenue / ARR multiple",
+        "formula": "countable revenue x revenue multiple",
+        "multiple_source": "Percentiles of the supplied comparables where enough disclose revenue, otherwise a stated stage prior labelled ANALYST ASSUMPTION.",
+        "quality_adjusted": false,
+        "excluded_when": "No revenue on a countable basis, or revenue below the floor at which a multiple carries meaning."
+      },
+      {
+        "key": "comparable_financing",
+        "label": "Comparable financings",
+        "formula": "25th / 50th / 75th percentile of the supplied pre-money valuations",
+        "reading": "pre-money percentile",
+        "distinct_from_multiple": "Reads the comp set as a distribution of valuations, not of multiples. The multiple reading belongs to revenue_multiple; running both would be one calculation reported twice, agreeing with itself and collapsing the range to a false precision.",
+        "selection_filters": ["stage", "geography"],
+        "quality_adjusted": false,
+        "excluded_when": "No comparable financings supplied, or none carrying a pre-money valuation."
+      },
+      {
+        "key": "venture_method",
+        "label": "VC method",
+        "formula": "((exit value / required return) x (1 - dilution to exit)) - the raise",
+        "weight_cap": "Never rises above its nominal stage weight. It stacks four assumptions — exit multiple, required return, dilution to exit and a growth path — so the absence of an evidence-led method must not promote it.",
+        "quality_adjusted": false,
+        "excluded_when": "No round size, no revenue and no serviceable obtainable market to grow from, or the modelled exit implies no positive pre-money."
+      },
+      {
+        "key": "scorecard",
+        "label": "Scorecard",
+        "formula": "baseline pre-money x weighted quality multiplier",
+        "baseline_source": "Median of the supplied comparables where there are enough, otherwise a stated stage prior labelled ANALYST ASSUMPTION.",
+        "quality_adjusted": true,
+        "quality_adjusted_note": "Already prices the premium/discount factors into its own answer, so its share of the blend is held out of the section 4 adjustment.",
+        "excluded_when": "No baseline is defined for the stage. A document evidencing no factor at all still returns the bare baseline, marked as such."
+      }
+    ],
+    "blend": "Weighted average of the included method ranges at each of low, base and high.",
+    "range_floor": "A range that has collapsed onto its base is widened symmetrically and the widening is recorded, because a narrow range claims more precision than the evidence supports."
+  },
+
+  "fixed_fields": [
+    { "key": "firm_name", "label": "Firm", "source": "config.FIRM_NAME", "note": "Not analyzed. Top-left of the header band." },
+    { "key": "document_title", "label": "Document title", "source": "config.DOC_TITLE", "pattern": "STARTUP VALUATION ANALYSIS", "note": "Not analyzed. First element of the header identity strip." },
+    { "key": "analysis_date", "label": "Analysis date", "source": "run date", "note": "Not analyzed. Top-right of the header as DD Month YYYY. Also the anchor that decides which years in the source document count as forecasts." },
+    { "key": "disclaimer", "label": "Disclaimer", "source": "config.DISCLAIMER", "note": "Not analyzed. Required on every page: the document must state that valuation is subjective and that terms depend on demand, conditions, structure, negotiation and diligence." },
+    { "key": "confidentiality", "label": "Confidentiality line", "source": "config.CONFIDENTIALITY", "pattern": "Confidential – for recipients only.", "note": "Not analyzed. Foot of the footer band." },
+    { "key": "firm_logo", "label": "Firm logo", "source": "assets/TEN_Capital_logo_footer.png", "note": "Not analyzed. Bottom-right of the footer band. Omitted if the asset is absent; never substituted or imitated." }
+  ],
+
+  "zones": [
+    {
+      "id": "header",
+      "label": "Header band",
+      "placement": "full width, top",
+      "height_in": 0.8,
+      "style": "navy band; pale-blue firm name and date, large white company name, pale-blue identity strip"
+    },
+    {
+      "id": "body",
+      "label": "Body column",
+      "placement": "full width, between the bands",
+      "style": "six stacked sections, each a numbered navy heading over a hairline rule; leftover height distributed as inter-section gaps"
+    },
+    {
+      "id": "footer",
+      "label": "Footer band",
+      "placement": "full width, bottom",
+      "min_height_in": 0.74,
+      "max_height_in": 1.45,
+      "style": "light band under a navy rule; confidence in its severity colour, flags in accent red, remainder in muted grey"
+    }
+  ],
+
+  "sections": [
+    { "number": 1, "key": "company_snapshot", "heading": "Company snapshot", "zone": "body", "layout": "six-cell metric strip" },
+    { "number": 2, "key": "valuation_range", "heading": "Valuation range — estimated pre-money", "zone": "body", "layout": "drawn band, focal point of the page" },
+    { "number": 3, "key": "valuation_methods", "heading": "Valuation methods", "zone": "body", "layout": "full-width table with a total row" },
+    { "number": 4, "key": "premium_discount", "heading": "Premium / discount drivers", "zone": "body", "layout": "two half-width columns over a reconciling line" },
+    { "number": 5, "key": "round_dilution", "heading": "Round & dilution", "zone": "body", "layout": "full-width table with a note line" },
+    { "number": 6, "key": "sensitivity_milestone", "heading": "Sensitivity & key milestone", "zone": "body", "layout": "grid at 46% width beside narrative at 54%" }
+  ],
+
+  "fields": [
+    {
+      "key": "company_name",
+      "label": "Company name",
+      "zone": "header",
+      "type": "text",
+      "max_words": 8,
+      "required": true,
+      "source_types": ["USER", "DECK"],
+      "placeholder": "{{COMPANY NAME}}",
+      "guidance": "Set as large as the header allows, then shrunk and ellipsized to fit. Falls back to the source filename stem if the document never names the company.",
+      "source_hint": "Cover page, footer, or the legal page."
+    },
+    {
+      "key": "identity_strip",
+      "label": "Identity strip",
+      "zone": "header",
+      "type": "text",
+      "required": true,
+      "source_types": ["USER", "DECK", "CALCULATED"],
+      "placeholder": "Startup Valuation Analysis | {{SECTOR}} | {{STAGE}} | {{GEOGRAPHY}}",
+      "guidance": "Pipe-joined; any element the source never states is dropped rather than printed empty. The stage element falls back to the inferred stage band label.",
+      "source_hint": "Positioning page, ask page, market page."
+    },
+
+    {
+      "key": "snapshot_strip",
+      "label": "Company snapshot",
+      "zone": "body",
+      "section": "company_snapshot",
+      "type": "metric_strip",
+      "cells": 6,
+      "required": true,
+      "source_types": ["USER", "DECK", "CALCULATED"],
+      "cell_format": "small muted upper-case label above a large navy value",
+      "slot_rules": [
+        "Slot 1 is always the revenue line: the countable figure under its own label (ARR or Revenue), or the pre-revenue marker.",
+        "Slot 6 is always the round size — the number the rest of the page is about.",
+        "Slots 2–5 are filled from the priority list below, taking the first four that were disclosed. A slot with nothing to fill it prints the missing marker rather than being dropped, so the gap is visible."
+      ],
+      "priority_candidates": [
+        { "label": "Growth", "format": "percent" },
+        { "label": "Gross margin", "format": "percent" },
+        { "label": "NRR", "format": "percent" },
+        { "label": "Customers", "format": "count" },
+        { "label": "Top customer", "format": "percent" },
+        { "label": "Runway", "format": "months" },
+        { "label": "Burn", "format": "money" },
+        { "label": "TAM", "format": "money" },
+        { "label": "Patents", "format": "count" }
+      ],
+      "placeholder": "{{METRIC LABEL}} / {{METRIC VALUE}}",
+      "guidance": "Approximately six core metrics, chosen by what the company actually is rather than fixed in advance. A pre-revenue company's six most useful figures are not a recurring-revenue company's."
+    },
+
+    {
+      "key": "valuation_range_figures",
+      "label": "Estimated pre-money range",
+      "zone": "body",
+      "section": "valuation_range",
+      "type": "drawn_figures",
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "columns": [
+        { "key": "low", "label": "LOW", "placeholder": "{{LOW PRE-MONEY}}", "emphasis": "muted" },
+        { "key": "base", "label": "BASE", "placeholder": "{{BASE PRE-MONEY}}", "emphasis": "navy, largest figure on the page" },
+        { "key": "high", "label": "HIGH", "placeholder": "{{HIGH PRE-MONEY}}", "emphasis": "muted" }
+      ],
+      "guidance": "The visual focal point. A reader must be able to take the range, the ask and the verdict from this band without reading a word of the rest of the page."
+    },
+    {
+      "key": "valuation_range_track",
+      "label": "Range track",
+      "zone": "body",
+      "section": "valuation_range",
+      "type": "drawn_scale",
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "elements": [
+        "A grey axis with the low-to-high span drawn over it in accent blue.",
+        "A navy tick at the base valuation.",
+        "A triangular marker at the requested valuation, coloured by status, labelled ASK {{REQUESTED VALUATION}}."
+      ],
+      "guidance": "The axis stretches to hold the ask when it falls outside the range, so the marker is never pinned misleadingly to an end of the bar. Omitted when no valuation was requested."
+    },
+    {
+      "key": "requested_panel",
+      "label": "Requested valuation panel",
+      "zone": "body",
+      "section": "valuation_range",
+      "type": "drawn_panel",
+      "width_fraction": 0.34,
+      "required": true,
+      "source_types": ["USER", "DECK", "CALCULATED"],
+      "rows": [
+        { "key": "basis_label", "placeholder": "{{REQUESTED PRE-MONEY | VALUATION CAP}}", "note": "Names which of the two the figure is. A convertible instrument states a cap rather than a pre-money, and the page must not blend them." },
+        { "key": "requested_value", "placeholder": "{{REQUESTED VALUATION}}" },
+        { "key": "premium_to_base", "label": "PREMIUM TO BASE", "placeholder": "{{SIGNED PERCENT}}", "format": "signed_percent" },
+        { "key": "status_chip", "placeholder": "{{STATUS}}", "type": "chip", "values": ["BELOW MARKET RANGE", "WITHIN DEFENSIBLE RANGE", "ABOVE DEFENSIBLE RANGE", "MATERIAL VALUATION GAP", "Insufficient information"] }
+      ],
+      "guidance": "Reversed out on navy. The chip is coloured by how far the ask sits from the range and its type shrinks to fit rather than wrapping."
+    },
+
+    {
+      "key": "methods_table",
+      "label": "Valuation methods",
+      "zone": "body",
+      "section": "valuation_methods",
+      "type": "table",
+      "required": true,
+      "source_types": ["CALCULATED", "COMPARABLE", "ASSUMPTION"],
+      "column_widths": [0.26, 0.15, 0.11, 0.48],
+      "columns": [
+        { "key": "method", "label": "Method", "align": "left", "placeholder": "{{METHOD NAME}}" },
+        { "key": "valuation", "label": "Valuation", "align": "right", "placeholder": "{{METHOD PRE-MONEY}}", "format": "money" },
+        { "key": "weight", "label": "Weight", "align": "right", "placeholder": "{{WEIGHT}}", "format": "percent" },
+        { "key": "basis", "label": "Basis", "align": "right", "placeholder": "{{WHAT THE METHOD WAS APPLIED TO AND AT WHAT RATE}}" }
+      ],
+      "total_row": { "label": "Weighted base valuation", "weight": "100%", "basis_placeholder": "after {{SIGNED PERCENT}} net adjustment" },
+      "guidance": "Only the methods that actually ran appear. Weights must sum to 100%.",
+      "must_not": "Show a method that produced no positive value, or a weight for a method that was excluded."
+    },
+    {
+      "key": "methods_excluded_note",
+      "label": "Excluded methods",
+      "zone": "body",
+      "section": "valuation_methods",
+      "type": "text",
+      "max_items": 2,
+      "required": false,
+      "source_types": ["CALCULATED"],
+      "placeholder": "Excluded: {{METHOD NAME}} — {{REASON IT COULD NOT BE GROUNDED}}",
+      "guidance": "Methods the stage nominated that excluded themselves, with the reason. Methods the stage never nominated are not listed here — they are in the record."
+    },
+
+    {
+      "key": "premium_drivers",
+      "label": "Premium drivers",
+      "zone": "body",
+      "section": "premium_discount",
+      "type": "list",
+      "column": "left",
+      "max_items": 4,
+      "required": false,
+      "source_types": ["DECK", "USER", "CALCULATED"],
+      "item_placeholder": "+{{EFFECTIVE PERCENT}} {{FACTOR LABEL}} — {{RATIONALE}}",
+      "item_max_words": 16,
+      "marker_colour": "positive green",
+      "empty_placeholder": "None evidenced in the material supplied.",
+      "guidance": "Each factor needs an evidenced trigger and a stated rationale. Percentages are effective — the nominal factor scaled by the share of the blend it actually reaches — so the printed lines reconcile with the printed total."
+    },
+    {
+      "key": "discount_drivers",
+      "label": "Discount drivers",
+      "zone": "body",
+      "section": "premium_discount",
+      "type": "list",
+      "column": "right",
+      "max_items": 4,
+      "required": false,
+      "source_types": ["DECK", "USER", "CALCULATED"],
+      "item_placeholder": "−{{EFFECTIVE PERCENT}} {{FACTOR LABEL}} — {{RATIONALE}}",
+      "item_max_words": 16,
+      "marker_colour": "flag red",
+      "empty_placeholder": "None evidenced in the material supplied.",
+      "guidance": "As for premiums. A metric that was never disclosed produces no factor in either direction: silence is not a weakness."
+    },
+    {
+      "key": "valuation_bridge",
+      "label": "Valuation bridge",
+      "zone": "body",
+      "section": "premium_discount",
+      "type": "text",
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "placeholder": "Bridge: weighted method baseline {{BASELINE}} {{SIGNED NET PERCENT}} net adjustment = {{BASE VALUATION}} base valuation.",
+      "partial_share_suffix": "Factors reach {{PERCENT}} of the blend; the quality-adjusted method's share already prices quality into its own answer.",
+      "zero_share_placeholder": "Bridge: the {{METHOD NAME}} is the only method that ran, and it already prices these factors into its {{MULTIPLIER}}x quality multiplier. They are listed above rather than applied a second time, so the base valuation is the method's own answer of {{BASE VALUATION}}.",
+      "guidance": "The reconciling line. baseline x (1 + net adjustment) must equal the base valuation printed in section 2, exactly. Where no share of the blend is open to the factors, the percentages are suppressed entirely rather than printed as zeros.",
+      "full_bridge_location": "The line-by-line bridge — baseline, each factor, adjusted total — is written to the JSON record under valuation_bridge."
+    },
+
+    {
+      "key": "dilution_table",
+      "label": "Round & dilution",
+      "zone": "body",
+      "section": "round_dilution",
+      "type": "table",
+      "required": true,
+      "source_types": ["CALCULATED", "USER", "DECK"],
+      "column_widths": [0.22, 0.2, 0.19, 0.19, 0.2],
+      "columns": [
+        { "key": "case", "label": "Case", "align": "left" },
+        { "key": "pre_money", "label": "Pre-money", "align": "right", "placeholder": "{{PRE-MONEY}}", "format": "money" },
+        { "key": "new_capital", "label": "New capital", "align": "right", "placeholder": "{{RAISE}}", "format": "money" },
+        { "key": "post_money", "label": "Post-money", "align": "right", "placeholder": "{{POST-MONEY}}", "format": "money" },
+        { "key": "new_investor_pct", "label": "New investor own.", "align": "right", "placeholder": "{{OWNERSHIP}}", "format": "percent_1dp" }
+      ],
+      "rows": [
+        { "key": "requested", "label": "Requested", "note": "Management's own ask. Omitted when none was disclosed." },
+        { "key": "low", "label": "Low" },
+        { "key": "base", "label": "Base" },
+        { "key": "high", "label": "High" }
+      ],
+      "identities": [
+        "post-money = pre-money + new capital",
+        "new investor ownership = new capital / post-money",
+        "existing holder dilution = new investor ownership"
+      ],
+      "guidance": "The same raise priced at four valuations. Seeing it four times is the fastest way for a reader to feel the size of the gap section 2 measures."
+    },
+    {
+      "key": "round_note",
+      "label": "Instrument and commitment note",
+      "zone": "body",
+      "section": "round_dilution",
+      "type": "text",
+      "required": false,
+      "source_types": ["DECK", "USER", "CALCULATED"],
+      "placeholder": "{{INSTRUMENT}} · {{CAP}} cap · {{DISCOUNT}} discount  ·  {{COMMITTED}} of {{RAISE}} committed ({{PERCENT}}); {{REMAINING}} remaining.  ·  {{CONVERSION CAVEAT}}",
+      "guidance": "Dot-separated; each element is dropped when its input is absent. A convertible instrument must carry the caveat that its dilution is modelled at the cap and that actual conversion depends on the priced round that triggers it."
+    },
+
+    {
+      "key": "sensitivity_grid",
+      "label": "Sensitivity grid",
+      "zone": "body",
+      "section": "sensitivity_milestone",
+      "type": "table",
+      "column": "left",
+      "width_fraction": 0.46,
+      "required": false,
+      "source_types": ["CALCULATED", "ASSUMPTION"],
+      "first_column_width": 0.3,
+      "variants": [
+        {
+          "id": "revenue",
+          "used_when": "The company has countable revenue.",
+          "row_axis": "{{REVENUE LABEL}}",
+          "column_axis": "Multiple",
+          "row_steps": ["0.75x today", "today", "1.5x today"],
+          "column_labels": "{{IMPLIED MULTIPLE}} at the anchor band's spread",
+          "note_placeholder": "The centre column is the {{MULTIPLE}} multiple implied by the base valuation of {{BASE}}; the outer columns carry the anchor band's spread. Bridge adjustment {{SIGNED PERCENT}}."
+        },
+        {
+          "id": "milestone",
+          "used_when": "The company has no countable revenue.",
+          "row_axis": "P({{MILESTONE}})",
+          "column_axis": "Anchor",
+          "row_steps": ["30%", "50%", "70%"],
+          "column_labels": ["Low", "Base", "High"],
+          "note_placeholder": "The base case embeds a 50% chance of {{MILESTONE}}; rows scale the anchor in proportion. ANALYST ASSUMPTION."
+        }
+      ],
+      "base_cell": "Highlighted and boxed. Must reproduce the base valuation printed in section 2 exactly — a grid whose middle disagrees with the headline is worse than no grid.",
+      "guidance": "Two axes, chosen by what the company actually is: the two assumptions with the greatest effect on the valuation."
+    },
+    {
+      "key": "key_milestone",
+      "label": "Key milestone",
+      "zone": "body",
+      "section": "sensitivity_milestone",
+      "type": "narrative",
+      "column": "right",
+      "max_words": 38,
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "placeholder": "{{THE SINGLE MILESTONE THAT WOULD MOST MATERIALLY JUSTIFY A HIGHER VALUATION, WITH THE FIGURE THAT GOES WITH IT}}",
+      "guidance": "One sentence, set bold as the first thing read in the right-hand column. Names a specific achievable thing and the number attached to it.",
+      "must_not": "A category such as 'more traction'. A milestone without a figure."
+    },
+    {
+      "key": "decision_factors",
+      "label": "What decides acceptance",
+      "zone": "body",
+      "section": "sensitivity_milestone",
+      "type": "list",
+      "column": "right",
+      "max_items": 3,
+      "item_max_words": 14,
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "placeholder": "What decides acceptance: {{FACTOR}}; {{FACTOR}}; {{FACTOR}}.",
+      "guidance": "Three to five factors most likely to determine whether investors accept the requested valuation, highest stakes first, drawn from the largest discounts and the evidence that is simply missing. Three are printed; the rest reach the record."
+    },
+    {
+      "key": "comparables_cited",
+      "label": "Comparables",
+      "zone": "body",
+      "section": "sensitivity_milestone",
+      "type": "list",
+      "column": "right",
+      "max_items": 2,
+      "required": false,
+      "source_types": ["COMPARABLE"],
+      "item_placeholder": "{{COMPANY}}, {{STAGE}}, {{DATE}} · pre-money {{PRE-MONEY}} · {{MULTIPLE}} revenue · {{SOURCE}}",
+      "empty_placeholder": "Comparable financing data not supplied.",
+      "guidance": "Names the transactions the comparable method actually used, with the source that supplied each. Where none were supplied the empty statement is printed in bold — the absence of evidence is a finding, not a blank."
+    },
+
+    {
+      "key": "confidence_line",
+      "label": "Valuation confidence",
+      "zone": "footer",
+      "type": "text",
+      "max_words": 34,
+      "required": true,
+      "source_types": ["CALCULATED"],
+      "placeholder": "VALUATION CONFIDENCE: {{HIGH | MEDIUM | LOW}}  {{ONE-SENTENCE REASON}}",
+      "level_colours": { "HIGH": "positive green", "MEDIUM": "warn amber", "LOW": "flag red" },
+      "level_meanings": {
+        "HIGH": "Strong financial data, credible comparables and mature operating metrics.",
+        "MEDIUM": "Some reliable company data but limited comparable information or incomplete metrics.",
+        "LOW": "Pre-revenue, missing financial information, weak comparables, or heavy reliance on assumptions."
+      },
+      "guidance": "The reason names what was and was not available, and the evidence points scored. A level built mostly on stated priors is stepped down regardless of the score."
+    },
+    {
+      "key": "analyst_flags",
+      "label": "Analyst flags",
+      "zone": "footer",
+      "type": "list",
+      "max_items": 3,
+      "required": false,
+      "source_types": ["CALCULATED"],
+      "marker": "▲",
+      "item_max_words": 22,
+      "item_placeholder": "▲ {{VALIDATION FINDING}}",
+      "overflow_placeholder": "(+{{N}} more in the JSON record)",
+      "guidance": "Validation findings at ERROR or WARNING severity, one line per distinct rule so a repeated finding does not crowd out an unseen one. Findings are reported, never resolved by editing an input."
+    },
+    {
+      "key": "not_disclosed",
+      "label": "Not disclosed",
+      "zone": "footer",
+      "type": "list",
+      "max_items": 6,
+      "required": false,
+      "source_types": ["CALCULATED"],
+      "item_placeholder": "{{FIELD THE ANALYSIS EXPECTED AND DID NOT GET}}",
+      "overflow_placeholder": "(+{{N}} more in the JSON record)",
+      "separator": "; ",
+      "guidance": "What the analysis wanted and was never given. Printed rather than quietly absorbed, because the gaps are what a reader should push on."
+    },
+    {
+      "key": "disclaimer",
+      "label": "Disclaimer",
+      "zone": "footer",
+      "type": "text",
+      "required": true,
+      "source_types": [],
+      "guidance": "Fixed text. Required on every page."
+    }
+  ],
+
+  "validation": {
+    "description": "Run before anything is rendered. Identity checks re-derive a number a second way and confirm the analysis agrees with itself; coherence checks ask whether the result is possible at all. A failure is reported — nothing is edited to make a check pass, and no contradiction in the source document is resolved.",
+    "severities": ["ERROR", "WARNING", "NOTE"],
+    "rules_checked": [
+      "round.missing / round.non_positive — a round size is present and greater than zero",
+      "round.identity — pre-money + raise = post-money where all three are stated",
+      "round.committed — committed capital does not exceed the round size",
+      "round.no_cap — a convertible instrument discloses a valuation cap",
+      "metric.range.{field} — every percentage input falls inside a plausible band",
+      "revenue.basis / revenue.leak — a projected, pipeline or aspirational figure never reaches a multiple",
+      "revenue.scale — revenue implausibly small against the raise, which usually means a table denominated in thousands",
+      "revenue.arr_mrr — stated ARR reconciles with stated MRR",
+      "revenue.pipeline_equals_revenue — the pipeline and revenue figures are not the same number misread twice",
+      "valuation.non_positive / valuation.order — the range is positive and low <= base <= high",
+      "valuation.spread — the methods do not disagree so widely that the range means nothing",
+      "methods.none / methods.weights / methods.value — at least one method ran, weights sum to one, every included method produced a positive value",
+      "bridge.total — the bridge closes on the base valuation the page prints",
+      "dilution.identity / dilution.bounds / dilution.heavy — ownership equals new capital over post-money, sits inside 0–100%, and heavy single-round dilution is flagged",
+      "requested.missing / requested.gap — the requested valuation is identified, and an ask far above the range is reported rather than discounted for",
+      "consent.inferred — no consent timestamp exists without an explicit consent flag",
+      "deck.contradiction — every contradiction found in the source document is carried forward unresolved"
+    ]
+  },
+
+  "rules": [
+    "Do not fabricate revenue, comparable financings or valuations. An absent field is an absent field.",
+    "Do not treat projected, pipeline or aspirational revenue as current revenue.",
+    "Do not silently substitute an industry average for a company fact. A stated prior is used only when nothing better exists, and it is labelled ANALYST ASSUMPTION on the page.",
+    "Do not represent an assumption as a company fact. Every value carries its source type.",
+    "Do not infer customer retention, intellectual-property strength or investor demand from silence.",
+    "Do not infer consent. Every consent flag defaults to false and is set only by an explicit instruction.",
+    "Do not let the language model perform arithmetic that Python can calculate deterministically.",
+    "Do not count the same strength twice: quality adjusts the valuation once, and a method that already prices quality is held out of that adjustment.",
+    "Do not discount the estimate because management asked high — that makes the gap partly self-inflicted. Report it as a finding.",
+    "Do not run two methods that are the same calculation on the same evidence; they would agree with themselves and collapse the range.",
+    "Do not silently resolve a contradiction in the source document. Flag it.",
+    "Do not present the base case as the price. It is the centre of a range that an investor is expected to challenge.",
+    "Every material number must be traceable to USER, DECK, COMPARABLE, CALCULATED or ASSUMPTION.",
+    "A lower-authority source may never overwrite a higher-authority one.",
+    "Where information is missing, print the missing marker or the not-disclosed statement, and list the gap."
+  ],
+
+  "reader_questions": {
+    "description": "The document must answer these within approximately thirty seconds. Each is mapped to the section that answers it; a section that stops answering its question has failed regardless of how it looks.",
+    "questions": [
+      { "question": "What valuation is management asking for?", "answered_by": "requested_panel" },
+      { "question": "What valuation range does the evidence support?", "answered_by": "valuation_range_figures" },
+      { "question": "How was that range calculated?", "answered_by": "methods_table" },
+      { "question": "What assumptions matter most?", "answered_by": "sensitivity_grid, methods_excluded_note" },
+      { "question": "What creates a premium?", "answered_by": "premium_drivers" },
+      { "question": "What creates a discount?", "answered_by": "discount_drivers" },
+      { "question": "How far apart are management and the estimated range?", "answered_by": "requested_panel, valuation_range_track" },
+      { "question": "How much dilution does the round create?", "answered_by": "dilution_table" },
+      { "question": "What milestone could justify a higher valuation?", "answered_by": "key_milestone" },
+      { "question": "How confident should the investor be in the analysis?", "answered_by": "confidence_line" }
+    ]
+  },
+
+  "formatting": {
+    "typography": {
+      "preferred_family": "Open Sans",
+      "preferred_source": "assets/fonts/OpenSans-Regular.ttf, OpenSans-Bold.ttf, OpenSans-Italic.ttf",
+      "fallback_family": "Helvetica",
+      "fallback_note": "Used when the Open Sans files are absent. It needs no font files and renders identically on any host; nothing in the layout depends on which family is in use.",
+      "body_size_range_pt": [7.2, 9.5],
+      "section_heading": "Numbered, upper case, navy bold, followed by a hairline rule",
+      "fit_strategy": "Eight type profiles from 9.5pt body down to 7.2pt. The build takes the first profile that fits on one page, so the report is set as large as the content allows rather than as small as it must be.",
+      "one_page": "Hard constraint. Content is reduced before type drops below a readable size."
+    },
+    "palette": {
+      "navy": "#0A2342",
+      "ink": "#1B1F27",
+      "muted": "#5A6472",
+      "ghost": "#8A8F98",
+      "rule": "#C9D2DE",
+      "band": "#F2F4F7",
+      "accent": "#1F6FB2",
+      "positive": "#1D6B4F",
+      "warn": "#B26B1F",
+      "flag": "#A5402A",
+      "paper": "#FFFFFF"
+    },
+    "status_colours": {
+      "BELOW MARKET RANGE": "accent",
+      "WITHIN DEFENSIBLE RANGE": "positive",
+      "ABOVE DEFENSIBLE RANGE": "warn",
+      "MATERIAL VALUATION GAP": "flag",
+      "Insufficient information": "muted"
+    },
+    "number_formats": {
+      "money": "$1.2B / $47.3M / $850k / $1,200",
+      "money_range": "$14–23M — one shared scale suffix so a range fits a narrow column",
+      "count": "1.2M / 47k / 1,250 / 12",
+      "percent": "94%",
+      "percent_1dp": "18.2%",
+      "signed_percent": "+39% / −12% / 0% — a zero prints without a sign",
+      "multiple": "6.0x",
+      "months": "14 mo",
+      "date": "DD Month YYYY"
+    },
+    "tables": {
+      "header_row": "white bold on navy",
+      "first_column": "bold label, left aligned",
+      "body_cells": "regular, right aligned, wrapping inside the cell",
+      "row_banding": "alternating white and band grey",
+      "total_row": "navy rule above, tinted background",
+      "rules": "hairline row rules and a box in rule grey"
+    },
+    "spacing": "Leftover body height is distributed between the six sections as gaps, capped so a short page does not read as empty."
+  }
+}

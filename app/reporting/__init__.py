@@ -1,0 +1,1 @@
+"""Investor-grade PDF rendering."""

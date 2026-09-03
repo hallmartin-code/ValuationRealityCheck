@@ -1,0 +1,8 @@
+company,sector,stage,financing_date,round_size,pre_money,post_money,revenue,arr,growth,geography,lead_investor,source,source_date
+# Comparable financings are supplied, never fetched and never invented. Delete
+# these example rows and enter transactions you can cite. A row without a
+# pre-money valuation is ignored by the comparable method and reported as such.
+# Money may be written as 24000000 or $24M; growth as 0.85 or 85%.
+Example Analytics Co,B2B SaaS,Series A,2025-06,6000000,24000000,,2600000,2600000,80%,United States,Example Ventures,PitchBook,2025-07-01
+Second Example Inc,B2B SaaS,Series A,2025-03,8000000,32000000,,4100000,4100000,65%,United States,Another Fund,Company press release,2025-03-14
+Third Example Ltd,B2B SaaS,Seed,2024-11,3000000,12000000,,1200000,1200000,110%,United Kingdom,Seed Partners,Crunchbase,2024-12-02
