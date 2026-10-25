@@ -506,6 +506,49 @@ class TestFormHonoursTheStandard:
         assert comparables[0].company == "Example Co"
         assert comparables[0].pre_money == pytest.approx(24_000_000)
 
+    def test_manually_entered_comparables_are_parsed_and_passed_through(
+        self, client, deck_bytes, stub_pipeline
+    ):
+        rows = [
+            {"company": "Example Co", "stage": "Series A", "pre_money": "$24M", "source": "PitchBook"},
+            {"company": "  ", "pre_money": ""},
+        ]
+        data = upload(deck_bytes, comparables_manual=json.dumps(rows))
+        client.post("/analyze", data=data, content_type="multipart/form-data")
+        comparables = stub_pipeline["comparables"]
+        assert len(comparables) == 1
+        assert comparables[0].company == "Example Co"
+        assert comparables[0].pre_money == pytest.approx(24_000_000)
+
+    def test_manually_entered_inputs_reach_the_overrides(
+        self, client, deck_bytes, stub_pipeline
+    ):
+        typed = {"burn": "$150K", "funding_stage": "Seed", "tam": " "}
+        data = upload(deck_bytes, inputs_manual=json.dumps(typed))
+        client.post("/analyze", data=data, content_type="multipart/form-data")
+        overrides = stub_pipeline["overrides"]
+        assert overrides["burn"] == "$150K"
+        assert overrides["funding_stage"] == "Seed"
+        assert "tam" not in overrides
+
+    def test_malformed_manual_data_is_refused(self, client, deck_bytes):
+        data = upload(deck_bytes, comparables_manual="{not json")
+        response = client.post("/analyze", data=data, content_type="multipart/form-data")
+        assert response.status_code == 400
+
+    def test_every_manual_input_box_is_a_recognised_key(self):
+        from app.extraction import profile_builder
+        from web.server import MANUAL_INPUT_GROUPS
+
+        keys = {key: "x" for _, fields in MANUAL_INPUT_GROUPS for key, _, _ in fields}
+        assert profile_builder.unknown_keys(keys) == []
+
+    def test_the_index_offers_manual_entry_fields(self, client):
+        html = client.get("/").get_data(as_text=True)
+        assert 'value="manual"' in html
+        assert 'id="comps-table"' in html
+        assert 'data-input="burn"' in html
+
     def test_the_interpretation_can_be_switched_off(self, client, deck_bytes, stub_pipeline):
         client.post(
             "/analyze",

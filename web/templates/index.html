@@ -331,7 +331,89 @@
     color: var(--ink-300);
   }
   .uploads-title span{ color: var(--ink-600); margin-left:6px; }
-  .uploads.attention .field input[type=file]{ border-color: var(--amber); }
+  .uploads.attention [data-entry="comparables"]{ border-color: var(--amber); }
+
+  .entry{
+    margin-top: 14px;
+    border: 1px solid var(--navy-700);
+    border-radius: 11px;
+    padding: 14px;
+    transition: border-color .15s ease;
+  }
+  .entry-head{
+    display:flex; flex-wrap:wrap; gap:10px;
+    align-items:center; justify-content:space-between;
+    margin-bottom: 12px;
+  }
+  .entry-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px; letter-spacing:0.11em; text-transform:uppercase;
+    color: var(--ink-300);
+  }
+  .seg{
+    display:inline-flex;
+    background: var(--navy-950);
+    border: 1px solid var(--navy-700);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .seg label{ position:relative; }
+  .seg input{ position:absolute; opacity:0; pointer-events:none; }
+  .seg span{
+    display:block;
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-size:12px;
+    color: var(--ink-500);
+    cursor:pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .seg input:checked + span{ background: var(--navy-800); color: var(--ink-100); }
+  .seg input:focus-visible + span{ outline:2px solid var(--teal); outline-offset:1px; }
+  .group-title{
+    margin-top: 16px;
+    font-size:12px; font-weight:600;
+    color: var(--ink-300);
+  }
+  .group-title + .grid{ margin-top: 8px; }
+
+  .table-scroll{ overflow-x:auto; margin: 0 -2px; }
+  table.comps{ border-collapse:collapse; min-width: 980px; width:100%; }
+  table.comps th{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px; letter-spacing:0.09em; text-transform:uppercase;
+    color: var(--ink-500); font-weight:500;
+    text-align:left; padding: 0 4px 6px;
+  }
+  table.comps td{ padding: 3px 4px; }
+  table.comps input{
+    width:100%;
+    background: var(--navy-950);
+    border: 1px solid var(--navy-700);
+    border-radius: 7px;
+    padding: 7px 8px;
+    color: var(--ink-100);
+    font-size:13px;
+    font-family:inherit;
+  }
+  table.comps input:focus{ outline:none; border-color: var(--teal); }
+  table.comps input::placeholder{ color: var(--ink-600); }
+  .remove-row{
+    background:none; border:none; cursor:pointer;
+    color: var(--ink-600); font-size:16px; line-height:1; padding: 4px 6px;
+  }
+  .remove-row:hover{ color: var(--coral-soft); }
+  .add-row{
+    margin-top: 10px;
+    background: var(--navy-800);
+    color: var(--ink-300);
+    border: 1px solid var(--navy-700);
+    border-radius: 7px;
+    padding: 7px 12px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .add-row:hover{ border-color: var(--teal); color: var(--ink-100); }
 
   .toggle{ display:flex; gap:11px; align-items:flex-start; margin-top:14px; cursor:pointer; }
   .toggle input{
@@ -667,18 +749,59 @@
         <em>&ldquo;Comparable financing data not supplied&rdquo;</em>, the comparable method excludes
         itself, and the multiple falls back to a stage prior labelled <em>ANALYST ASSUMPTION</em>.
       </p>
-      <div class="grid">
-        <div class="field">
-          <label for="comparables">Comparable financings</label>
-          <input type="file" id="comparables" name="comparables" accept=".csv,.json">
+      <div class="entry" data-entry="comparables">
+        <div class="entry-head">
+          <span class="entry-label">Comparable financings</span>
+          <div class="seg" role="radiogroup" aria-label="How to supply comparable financings">
+            <label><input type="radio" name="comparables_mode" value="file" checked><span>Upload a file</span></label>
+            <label><input type="radio" name="comparables_mode" value="manual"><span>Enter manually</span></label>
+          </div>
+        </div>
+        <div class="field entry-file">
+          <input type="file" id="comparables" name="comparables" accept=".csv,.json" aria-label="Comparable financings file">
           <div class="help">.csv or .json — headings may be prose, e.g. <code>Pre-money valuation</code>.
             <a href="/starter/comparables.csv" download>Download a starter .csv</a></div>
         </div>
-        <div class="field">
-          <label for="inputs">User inputs</label>
-          <input type="file" id="inputs" name="inputs" accept=".json">
+        <div class="entry-manual" hidden>
+          <div class="table-scroll">
+            <table class="comps" id="comps-table">
+              <thead><tr>
+                {% for key, heading, _ in comparable_columns %}<th>{{ heading }}</th>{% endfor %}<th></th>
+              </tr></thead>
+              <tbody id="comps-body"></tbody>
+            </table>
+          </div>
+          <button type="button" class="add-row" id="add-comp">+ Add a financing</button>
+          <div class="help">One row per financing you can cite. A row without a pre-money is reported but not used.
+            Money as <code>$24M</code> or <code>24000000</code>; growth as <code>80%</code>.</div>
+        </div>
+      </div>
+
+      <div class="entry" data-entry="inputs">
+        <div class="entry-head">
+          <span class="entry-label">User inputs</span>
+          <div class="seg" role="radiogroup" aria-label="How to supply user inputs">
+            <label><input type="radio" name="inputs_mode" value="file" checked><span>Upload a file</span></label>
+            <label><input type="radio" name="inputs_mode" value="manual"><span>Enter manually</span></label>
+          </div>
+        </div>
+        <div class="field entry-file">
+          <input type="file" id="inputs" name="inputs" accept=".json" aria-label="User inputs file">
           <div class="help">.json — outranks the deck. Anything typed below outranks this file.
             <a href="/starter/user_inputs.json" download>Download a starter .json</a></div>
+        </div>
+        <div class="entry-manual" hidden>
+          <p class="hint">Leave a box empty and the deck's figure is used. Company name, sector,
+            round size, pre-money, cap, ARR, growth, margin and NRR are under
+            <em>Override what the deck says</em> below.</p>
+          {% for group, fields in manual_input_groups %}
+          <div class="group-title">{{ group }}</div>
+          <div class="grid">
+            {% for key, label, placeholder in fields %}
+            <div class="field"><label for="in-{{ key }}">{{ label }}</label><input id="in-{{ key }}" data-input="{{ key }}" placeholder="{{ placeholder }}" autocomplete="off"></div>
+            {% endfor %}
+          </div>
+          {% endfor %}
         </div>
       </div>
     </section>
@@ -941,9 +1064,9 @@ function finish(job){
   if(s.statement){
     banners.innerHTML += '<div class="banner info">' + esc(s.statement) + '</div>';
   }
-  if(!document.getElementById("comparables").files.length){
+  if(!comparablesSupplied()){
     banners.innerHTML += '<div class="banner info">No comparable financings were supplied. ' +
-      '<a href="#uploads" id="add-comparables">Upload a comparables file</a> and generate again ' +
+      '<a href="#uploads" id="add-comparables">Upload or enter comparables</a> and generate again ' +
       'to ground the comparable method.</div>';
   }
   const d = s.delivery || {};
@@ -997,6 +1120,64 @@ function finish(job){
   resultCard.scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
+/* --- comparables and user inputs: upload a file, or enter manually --- */
+
+const COMP_COLUMNS = {{ comparable_columns | tojson }};
+const compsBody = document.getElementById("comps-body");
+
+function modeOf(entry){
+  return document.querySelector('input[name="' + entry + '_mode"]:checked').value;
+}
+
+document.querySelectorAll(".entry").forEach(entry => {
+  entry.addEventListener("change", event => {
+    if(!event.target.name || !event.target.name.endsWith("_mode")) return;
+    const manual = event.target.value === "manual";
+    entry.querySelector(".entry-file").hidden = manual;
+    entry.querySelector(".entry-manual").hidden = !manual;
+    if(manual && entry.dataset.entry === "comparables" && !compsBody.children.length) addCompRow();
+  });
+});
+
+function addCompRow(){
+  const row = document.createElement("tr");
+  row.innerHTML = COMP_COLUMNS.map(([key, heading, placeholder]) =>
+    '<td><input data-col="' + key + '" placeholder="' + esc(placeholder) + '" aria-label="' +
+    esc(heading) + '" autocomplete="off"></td>').join("") +
+    '<td><button type="button" class="remove-row" aria-label="Remove this financing">&times;</button></td>';
+  compsBody.appendChild(row);
+  row.querySelector("input").focus();
+}
+
+document.getElementById("add-comp").addEventListener("click", addCompRow);
+compsBody.addEventListener("click", event => {
+  if(event.target.classList.contains("remove-row")) event.target.closest("tr").remove();
+});
+
+function manualComparables(){
+  return [...compsBody.children].map(row => {
+    const values = {};
+    row.querySelectorAll("input[data-col]").forEach(input => {
+      if(input.value.trim()) values[input.dataset.col] = input.value.trim();
+    });
+    return values;
+  }).filter(values => Object.keys(values).length);
+}
+
+function manualInputs(){
+  const values = {};
+  document.querySelectorAll("input[data-input]").forEach(input => {
+    if(input.value.trim()) values[input.dataset.input] = input.value.trim();
+  });
+  return values;
+}
+
+function comparablesSupplied(){
+  return modeOf("comparables") === "manual"
+    ? manualComparables().length > 0
+    : document.getElementById("comparables").files.length > 0;
+}
+
 document.getElementById("banners").addEventListener("click", event => {
   if(event.target.id !== "add-comparables") return;
   event.preventDefault();
@@ -1044,6 +1225,16 @@ form.addEventListener("submit", async event => {
     const box = document.getElementById(id);
     if(box) data.set(id, box.checked ? "1" : "0");
   });
+  data.delete("comparables_mode");
+  data.delete("inputs_mode");
+  if(modeOf("comparables") === "manual"){
+    data.delete("comparables");
+    data.set("comparables_manual", JSON.stringify(manualComparables()));
+  }
+  if(modeOf("inputs") === "manual"){
+    data.delete("inputs");
+    data.set("inputs_manual", JSON.stringify(manualInputs()));
+  }
 
   try{
     const response = await fetch("/analyze", { method:"POST", body:data });

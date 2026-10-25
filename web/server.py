@@ -412,6 +412,122 @@ def _read_comparables(upload: Any) -> list[Any]:
         return financing_extractor.load_comparables(path)
 
 
+def _manual_json(form: Any, field: str, kind: type) -> Any:
+    """Decode a JSON field the browser builds from the manual-entry editors."""
+    raw = (form.get(field) or "").strip()
+    if not raw:
+        return kind()
+    try:
+        loaded = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"The manually entered data could not be read: {error}") from error
+    if not isinstance(loaded, kind):
+        raise ValueError("The manually entered data is not in the expected shape.")
+    return loaded
+
+
+def _read_manual_comparables(form: Any) -> list[Any]:
+    """Comparable financings typed into the table instead of uploaded."""
+    rows = _manual_json(form, "comparables_manual", list)
+    cleaned = [
+        {key: value.strip() for key, value in row.items() if isinstance(value, str) and value.strip()}
+        for row in rows
+        if isinstance(row, dict)
+    ]
+    parsed = (financing_extractor.parse_comparable(row) for row in cleaned if row)
+    return [built for built in parsed if built is not None]
+
+
+def _read_manual_inputs(form: Any) -> dict[str, Any]:
+    """User inputs typed into the manual fields instead of uploaded as JSON.
+
+    A blank box is omitted, so it never overwrites what the deck said.
+    """
+    values = _manual_json(form, "inputs_manual", dict)
+    return {
+        key: value.strip()
+        for key, value in values.items()
+        if isinstance(value, str) and value.strip()
+    }
+
+
+# The user-input keys with no box elsewhere on the form. The override and
+# consent sections already cover company, sector, geography, round size,
+# requested pre-money, cap, ARR, growth, gross margin, NRR and revenue basis.
+MANUAL_INPUT_GROUPS: list[tuple[str, list[tuple[str, str, str]]]] = [
+    ("Company", [
+        ("website", "Website", "example.com"),
+        ("headquarters", "Headquarters", "Austin, TX"),
+        ("subsector", "Subsector", ""),
+        ("business_model", "Business model", "Subscription"),
+        ("funding_stage", "Funding stage", "Seed"),
+    ]),
+    ("Round", [
+        ("instrument", "Instrument", "SAFE"),
+        ("requested_post_money", "Requested post-money", "$22M"),
+        ("discount_rate", "Discount rate", "20%"),
+        ("committed", "Committed to date", "$1.5M"),
+        ("prior_raised", "Raised previously", "$2M"),
+    ]),
+    ("Financials & traction", [
+        ("revenue", "Revenue", "$1.8M"),
+        ("mrr", "MRR", "$200K"),
+        ("ebitda", "EBITDA", "-$1.2M"),
+        ("burn", "Monthly burn", "$150K"),
+        ("runway_months", "Runway (months)", "18"),
+        ("customer_count", "Customers", "40"),
+        ("acv", "ACV", "$60K"),
+        ("largest_customer_pct", "Largest customer share", "18%"),
+        ("retention", "Retention", "90%"),
+        ("gross_retention", "Gross retention", "92%"),
+        ("churn", "Churn", "8%"),
+        ("cac", "CAC", "$25K"),
+        ("ltv", "LTV", "$180K"),
+        ("ltv_cac", "LTV : CAC", "3.2"),
+        ("sales_cycle_months", "Sales cycle (months)", "4"),
+        ("pipeline", "Pipeline", "$3M"),
+        ("customer_growth", "Customer growth", "60%"),
+    ]),
+    ("Market", [
+        ("tam", "TAM", "$12B"),
+        ("sam", "SAM", "$1.5B"),
+        ("som", "SOM", "$120M"),
+    ]),
+    ("Defensibility & team", [
+        ("ip_summary", "IP summary", ""),
+        ("patents_filed", "Patents filed", "3"),
+        ("patents_granted", "Patents granted", "1"),
+        ("proprietary_technology", "Proprietary technology", ""),
+        ("proprietary_data", "Proprietary data", ""),
+        ("regulatory_approvals", "Regulatory approvals", ""),
+        ("regulatory_status", "Regulatory status", ""),
+        ("product_maturity", "Product maturity", "In market"),
+        ("differentiation", "Differentiation", ""),
+        ("founder_experience", "Founder experience", ""),
+        ("management_quality", "Management quality", ""),
+        ("relevant_exits", "Relevant exits", ""),
+        ("domain_expertise", "Domain expertise", ""),
+        ("customer_validation", "Customer validation", ""),
+        ("strategic_partnerships", "Strategic partnerships", ""),
+    ]),
+]
+
+# Columns of the manual comparables table: (key, heading, placeholder).
+COMPARABLE_COLUMNS: list[tuple[str, str, str]] = [
+    ("company", "Company", "Example Co"),
+    ("stage", "Stage", "Series A"),
+    ("financing_date", "Date", "2025-06"),
+    ("round_size", "Round size", "$6M"),
+    ("pre_money", "Pre-money", "$24M"),
+    ("revenue", "Revenue", "$2.6M"),
+    ("arr", "ARR", "$2.6M"),
+    ("growth", "Growth", "80%"),
+    ("sector", "Sector", "B2B SaaS"),
+    ("geography", "Geography", "United States"),
+    ("source", "Source", "PitchBook"),
+]
+
+
 def _read_inputs(upload: Any) -> dict[str, Any]:
     """Parse an uploaded user-inputs JSON file, or return an empty mapping."""
     if upload is None or not upload.filename:
@@ -445,6 +561,8 @@ def index():
         steps=pipeline.STEP_LABELS,
         revenue_bases=norm.REVENUE_BASES,
         countable_bases=norm.COUNTABLE_BASES,
+        manual_input_groups=MANUAL_INPUT_GROUPS,
+        comparable_columns=COMPARABLE_COLUMNS,
         email_enabled=mailer.is_enabled(),
         email_to=", ".join(mailer.recipients()) if mailer.is_enabled() else "",
     )
@@ -519,7 +637,11 @@ def analyze():
 
     try:
         comparables = _read_comparables(request.files.get("comparables"))
-        supplied = _read_inputs(request.files.get("inputs"))
+        comparables += _read_manual_comparables(request.form)
+        supplied = {
+            **_read_inputs(request.files.get("inputs")),
+            **_read_manual_inputs(request.form),
+        }
     except ValueError as error:
         return jsonify(error=str(error)), 400
 
