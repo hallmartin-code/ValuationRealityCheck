@@ -600,6 +600,18 @@ def template():
     return send_file(path, mimetype="application/json")
 
 
+STARTER_FILES = {"comparables.csv": "text/csv", "user_inputs.json": "application/json"}
+
+
+@flask_app.get("/starter/<name>")
+def starter(name: str):
+    """A blank comparables or user-inputs file to fill in and upload."""
+    if name not in STARTER_FILES:
+        return jsonify(error="No such starter file."), 404
+    path = config.PROJECT_ROOT / "templates" / name
+    return send_file(path, mimetype=STARTER_FILES[name], as_attachment=True, download_name=name)
+
+
 def _finished(job_id: str):
     """Return (job, None) when a job's artefacts are ready, else (None, response)."""
     job = _jobs.get(job_id)

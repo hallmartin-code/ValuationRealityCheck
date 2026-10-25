@@ -188,6 +188,19 @@ class TestPages:
         assert payload["template_name"].startswith("TEN Capital")
         assert "sections" in payload
 
+    def test_starter_files_download_for_the_upload_fields(self, client):
+        comparables = client.get("/starter/comparables.csv")
+        assert comparables.status_code == 200
+        assert b"pre_money" in comparables.data
+        assert client.get("/starter/user_inputs.json").status_code == 200
+        assert client.get("/starter/.env").status_code == 404
+
+    def test_the_upload_fields_are_visible_without_expanding(self, client):
+        html = client.get("/").get_data(as_text=True)
+        uploads = html[html.index('id="uploads"'):html.index('id="comparables"')]
+        assert "<details" not in uploads
+        assert "/starter/comparables.csv" in html
+
 
 # --- What the upload endpoint refuses ---------------------------------------
 
